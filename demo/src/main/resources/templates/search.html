@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>按图搜索 - Map Service</title>
+    <script src="/js/jquery-3.6.1.min.js"></script>
+    <script src="/js/js.cookie.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.0/dist/semantic.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.0/dist/semantic.min.js"></script>
+    
+    <script>
+        function callOCR(username, imageHash) {
+            console.log("image hash OCR: " + imageHash);
+            console.log("Uploader: " + username);
+            $.ajax({
+                url: "/image/requestOCR",
+                type: "POST",
+                data: imageHash + " " + username,
+                dataType: "text",
+                contentType: "text/plain",
+                success: function (ocr_result) {
+                    $("#ocr_result").val(ocr_result);
+                    console.log(ocr_result);
+                }
+            });
+        }
+        
+        function execSearch() {
+            const mResult = $("#ocr_result").val();
+            document.location.href = "/map?location=" + mResult;
+        }
+        
+        function backtoDashboard() {
+            document.location.href = "/dashboard";
+        }
+    </script>
+    
+    <script>
+        let imageHash = "no-image";
+        $(document).ready(function () {
+            // bind form submission event
+            $("#file-upload-form").on("submit", function (e) {
+
+                // cancel the default behavior
+                e.preventDefault();
+                let username = Cookies.get('username');
+                console.log("Username (fr. cookie): " + username);
+
+                // use $.ajax() to upload file
+                $.ajax({
+                    url: "/image/uploadImage",
+                    type: "POST",
+                    data: new FormData(this),
+                    enctype: 'multipart/form-data',
+                    processData: false,
+                    contentType: false,
+                    cache: false,
+                    success: function (res) {
+                        console.log(res);
+                        imageHash = res;
+                        callOCR(username, imageHash);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <style>
+        .main {
+            padding-top: 3em;
+            overflow: hidden;
+        }
+        .result-input {
+            padding: 5px;
+            margin: 5px;
+            width: -webkit-calc(100% - 10px);
+            width: -moz-calc(100% - 10px);
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            -o-box-sizing: border-box;
+            -ms-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+    </style>
+    
+</head>
+<body>
+    <div class="ui container main">
+        <button class="ui button" onclick="backtoDashboard()">
+            返回控制台
+        </button>
+        
+        <div class="ui stacked segment center aligned">
+            <form class="ui form center aligned" id="file-upload-form">
+                <h2 class="ui header center aligned">选择要上传的文件</h2>
+                <div class="ui file input" style="max-width: 300px;">
+                    <input type="file" id="file-upload-input" name="file">
+                </div>
+                <br>
+                <br>
+                <button class="ui button labeled icon primary" type="submit">
+                    <i class="file upload icon"></i>
+                    上传图片
+                </button>
+            </form>
+        </div>
+
+        <div class="ui stacked segment center aligned">
+            <div class="ui input result-input">
+                <input id="ocr_result">
+            </div>
+            <br><br>
+            <div>
+                <button class="ui button labeled icon primary red" id="execSearch" onclick="execSearch()">
+                    <i class="location arrow icon"></i>
+                    Go!
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
